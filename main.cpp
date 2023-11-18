@@ -1,62 +1,100 @@
-#include <stdio.h>
 #include <utility>
 #include <vector>
-#include <functional>
 #include <math.h>
 #include <fstream>
 #include <chrono>
 #include <iostream>
+#include <iomanip>
 
-void quick_sort(std::vector<int> vec, long long int& trocas, long long int& comparacoes) {
-    trocas = 0;
-    comparacoes = 0;
-    auto partition = [&comparacoes, &trocas](int arr[],int low,int high) -> int
-    {
-        using namespace std;
-        //choose the pivot
-        
-        int pivot=arr[high];
-        //Index of smaller element and Indicate
-        //the right position of pivot found so far
-        int i=(low-1);
-        
-        for(int j=low;j<=high;j++)
-        {
-            //If current element is smaller than the pivot
-            comparacoes++;
-            if(arr[j]<pivot)
-            {
-                //Increment index of smaller element
-                i++;
-                swap(arr[i],arr[j]);
-                trocas++;
-            }
+void radix_sort(int arr[], int tam, long long int* trocas, long long int* comparacoes) {
+    *trocas = 0;
+    *comparacoes = 0;
+
+    int* front = new int[tam];
+    int* back = new int[tam];
+    memcpy(front, arr, sizeof(int) * tam);
+    
+    for (int bit = 0, size_of_int = sizeof(int) * 8; bit < size_of_int; bit++) {
+        unsigned int prefix_sum[2] = { 0, 0 };
+        int i;
+        for (i = 0; i < tam; i++) {
+            prefix_sum[(front[i] & (1 << bit)) >> bit]++;
         }
-        trocas++;
-        swap(arr[i+1],arr[high]);
-        return (i+1);
-    };
-    // The Quicksort function Implement     
-    std::function<void(int*, int, int)> _quick_sort = [&partition, &_quick_sort](int arr[],int low,int high) -> void
-    {
-        // when low is less than high
-        if(low<high)
-        {
-            // pi is the partition return index of pivot
-            
-            int pi=partition(arr,low,high);
-            
-            //Recursion Call
-            //smaller element than pivot goes left and
-            //higher element goes right
-            _quick_sort(arr,low,pi-1);
-            _quick_sort(arr,pi+1,high);
+        prefix_sum[1] += prefix_sum[0];
+        for (i--; i >= 0; i--) {
+            (*trocas)++;
+            back[--prefix_sum[(front[i] & (1 << bit)) >> bit]] = front[i];
         }
-    };
-    _quick_sort(vec.data(), 0, vec.size() - 1);
+        std::swap(front, back);
+    }
+    delete[] back;
+    memcpy(arr, front, sizeof(int) * tam);
 }
 
-void selectionSort(int arr[], int n, long long int *trocas, long long int *comparacoes) {
+int quick_sort_partition(int arr[], int l, int h, long long int& trocas, long long int& comparacoes)
+{
+    int x = arr[h];
+    int i = (l - 1);
+
+    for (int j = l; j <= h - 1; j++) {
+        comparacoes++;
+        if (arr[j] <= x) {
+            i++;
+            trocas++;
+            std::swap(arr[i], arr[j]);
+        }
+    }
+    trocas++;
+    std::swap(arr[i + 1], arr[h]);
+    return (i + 1);
+}
+void quick_sort_aux(int arr[], int l, int h, long long int& trocas, long long int& comparacoes)
+{
+    // Create an auxiliary stack 
+    std::vector<int> stack(h - l + 1);
+
+    // initialize top of stack 
+    int top = -1;
+
+    // push initial values of l and h to stack 
+    stack[++top] = l;
+    stack[++top] = h;
+
+    // Keep popping from stack while is not empty 
+    while (top >= 0) {
+        // Pop h and l 
+        h = stack[top--];
+        l = stack[top--];
+
+        // Set pivot element at its correct position 
+        // in sorted array 
+        int p = quick_sort_partition(arr, l, h, trocas, comparacoes);
+
+        // If there are elements on left side of pivot, 
+        // then push left side to stack 
+        if (p - 1 > l) {
+            stack[++top] = l;
+            stack[++top] = p - 1;
+        }
+
+        // If there are elements on right side of pivot, 
+        // then push right side to stack 
+        if (p + 1 < h) {
+            stack[++top] = p + 1;
+            stack[++top] = h;
+        }
+    }
+}
+//versão iterativa
+void quick_sort(int arr[], int n, long long int* trocas, long long int* comparacoes) {
+    *trocas = 0;
+    *comparacoes = 0;
+    quick_sort_aux(arr, 0, n - 1, *trocas, *comparacoes);
+}
+
+void selectionSort(int arr[], int n, long long int* trocas, long long int* comparacoes) {
+    *trocas = 0;
+    *comparacoes = 0;
     int i, j, min_idx;
     for (i = 0; i < n - 1; i++) {
         min_idx = i;
@@ -70,7 +108,9 @@ void selectionSort(int arr[], int n, long long int *trocas, long long int *compa
     }
 }
 
-void insertion_sort(int arr[], int tamanho, long long int *trocas, long long int *comparacoes) {
+void insertion_sort(int arr[], int tamanho, long long int* trocas, long long int* comparacoes) {
+    *trocas = 0;
+    *comparacoes = 0;
     int i, chave, j;
     for (i = 1; i < tamanho; i++) {
         chave = arr[i];
@@ -89,7 +129,9 @@ void insertion_sort(int arr[], int tamanho, long long int *trocas, long long int
     }
 }
 
-void improvedBubbleSort(int arr[], int tamanho, long long int *trocas, long long int *comparacoes) {
+void improvedBubbleSort(int arr[], int tamanho, long long int* trocas, long long int* comparacoes) {
+    *trocas = 0;
+    *comparacoes = 0;
     int esquerda = 0, direita = tamanho - 1;
     int trocou = 1;
     int i;
@@ -124,7 +166,9 @@ void improvedBubbleSort(int arr[], int tamanho, long long int *trocas, long long
     }
 }
 
-void bubbleSort(int arr[], int tamanho, long long int *trocas, long long int *comparacoes) {
+void bubbleSort(int arr[], int tamanho, long long int* trocas, long long int* comparacoes) {
+    *trocas = 0;
+    *comparacoes = 0;
     int i, j;
     for (i = 0; i < tamanho - 1; i++) {
         for (j = 0; j < tamanho - i - 1; j++) {
@@ -137,168 +181,155 @@ void bubbleSort(int arr[], int tamanho, long long int *trocas, long long int *co
     }
 }
 
-int main() {
-    std::vector<int> melhor_caso[3];
+
+int main(int n_args, char** p_args) {
+    const char* nome_arquivo = n_args > 1 ? p_args[1] : "trabson.csv";
+    std::ofstream arquivo(nome_arquivo);
+    arquivo.precision(6);
+    arquivo.setf(arquivo.scientific);
+    std::cout.precision(6);
+    std::cout.setf(std::cout.scientific);
+
+    if (arquivo.is_open())
+        std::cout << "Arquivo \"" << nome_arquivo << "\" aberto.\n";
+    else {
+        std::cout << "Falha ao abrir arquivo.\n";
+        return 0;
+    }
+    
+    std::vector<const char*> nomes_casos = { "Melhor", "Medio", "Pior" };
+   
+    //[tam][caso]
+    std::vector<int> vec[3][3];
+    //melhor caso
     for (int i = 0; i < 3; i++) {
         int tam = (int)std::pow(10, i + 3);
-        melhor_caso[i].resize(tam);
+        vec[i][0].resize(tam);
         for (int j = 0; j < tam; j++) {
-            melhor_caso[i][j] = j;
+            vec[i][0][j] = j;
+        }
+    }
+    //medio caso
+    for (int i = 0; i < 3; i++) {
+        int tam = (int)std::pow(10, i + 3);
+        vec[i][1].resize(tam);
+        for (int j = 0; j < tam; j++) {
+            vec[i][1][j] = rand();
+        }
+    }
+    //pior caso
+    for (int i = 0; i < 3; i++) {
+        int tam = (int)std::pow(10, i + 3);
+        vec[i][2].resize(tam);
+        for (int j = 0; j < tam; j++) {
+            vec[i][2][j] = tam - i;
         }
     }
 
-    std::vector<int> medio_caso[3];
-    for (int i = 0; i < 3; i++) {
-        int tam = (int)std::pow(10, i + 3);
-        melhor_caso[i].resize(tam);
-        for (int j = 0; j < tam; j++) {
-            medio_caso[i][j] = rand();
-        }
-    }
+    typedef void(*algoritimo_de_ordenamento)(int*, int, long long int*, long long int*);
+    std::vector<algoritimo_de_ordenamento> algoritimos = {
+        bubbleSort,
+        improvedBubbleSort,
+        insertion_sort,
+        selectionSort,
+        quick_sort,
+        radix_sort
+    };
+    std::vector<const char*> nomes_algoritimos = {
+        "Bubble Sort",
+        "Improved Bubble Sort",
+        "Insertion Sort",
+        "Selection Sort",
+        "Quick Sort",
+        "Radix Sort"
+    };
 
-    std::vector<int> pior_caso[3];
-    for (int i = 0; i < 3; i++) {
-        int tam = (int)std::pow(10, i + 3);
-        melhor_caso[i].resize(tam);
-        for (int j = 0; j < tam; j++) {
-            pior_caso[i][j] = tam - i;
-        }
-    }
-
+    std::vector<int> aux;
     std::chrono::steady_clock::time_point tp1, tp2;
     long long int trocas = 0, comparacoes = 0;
     double tempo = 0.0;
-    std::ofstream arquivo("trabson.csv");
 
-    std::cout << arquivo.is_open() << std::endl;
+    arquivo 
+        << std::left << std::setfill(' ') << std::setw(20)
+        << "Algoritimo" << " ; "
+        << std::right << std::setfill(' ') << std::setw(20)
+        << "Tamanho" << " ; "
+        << std::left << std::setfill(' ') << std::setw(20)
+        << "Caso" << " ; "
+        << std::right << std::setfill(' ') << std::setw(20)
+        << "Tempo (s)" << " ; "
+        << std::right << std::setfill(' ') << std::setw(20)
+        << "Trocas" << " ; "
+        << std::right << std::setfill(' ') << std::setw(20)
+        << "Comparacoes"
+        << std::endl;
+    for (int alg = 0; alg < algoritimos.size(); alg++) {
+        std::cout 
+            << std::left << std::setfill('=') << std::setw(80)
+            << std::string(nomes_algoritimos[alg]) + ' '
+            << std::endl;
+        for (int tam = 0; tam < 3; tam++) {
+            std::cout 
+                << '\t'
+                << vec[tam][0].size()
+                << std::endl;
+            std::cout
+                << "\t\t"
+                << std::left << std::setfill(' ') << std::setw(8)
+                << "Caso"
+                << std::right << std::setfill(' ') << std::setw(17)
+                << "Tempo(s)"
+                << std::right << std::setfill(' ') << std::setw(15)
+                << "Trocas"
+                << std::right << std::setfill(' ') << std::setw(15)
+                << "Comparacoes"
+                << std::endl;
 
-    arquivo << "Algoritimo ; Numero de elementos ; Caso ; Tempo de execucao (s) ; Quantidade de trocas ; Quantidade de comparacoes\n";
+            for (int caso = 0; caso < 3; caso++) {
+                std::cout
+                    << "\t\t"
+                    << std::left << std::setfill(' ') << std::setw(8)
+                    << nomes_casos[caso];
 
-    //BUBBLE SORT ================================================================
-    for (int i = 0; i < 3; i++) {
-        int tam = melhor_caso[i].size();
-        arquivo << "Bubble Sort ; " << tam << " ; Melhor ; ";
-        tp1 = std::chrono::steady_clock::now();
-        bubbleSort(melhor_caso[i].data(), melhor_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
+                aux = vec[tam][caso];
+                
+                tp1 = std::chrono::steady_clock::now();
+                algoritimos[alg](aux.data(), aux.size(), &trocas, &comparacoes);
+                tp2 = std::chrono::steady_clock::now();
+                
+                tempo = std::chrono::duration<double>(tp2 - tp1).count();
+                
+                std::cout
+                    << std::right << std::setfill(' ') << std::setw(17)
+                    << tempo
+                    << std::right << std::setfill(' ') << std::setw(15)
+                    << trocas
+                    << std::right << std::setfill(' ') << std::setw(15)
+                    << comparacoes
+                    << std::endl;
 
-        arquivo << "Bubble Sort ; " << tam << " ; Medio ; ";
-        tp1 = std::chrono::steady_clock::now();
-        bubbleSort(melhor_caso[i].data(), medio_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Bubble Sort ; " << tam << " ; Pior ; ";
-        tp1 = std::chrono::steady_clock::now();
-        bubbleSort(melhor_caso[i].data(), pior_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
+                arquivo 
+                    << std::left << std::setfill(' ') << std::setw(20)
+                    << nomes_algoritimos[alg] << " ; " 
+                    << std::right << std::setfill(' ') << std::setw(20)
+                    << vec[tam][caso].size() << " ; "
+                    << std::left << std::setfill(' ') << std::setw(20)
+                    << nomes_casos[caso] << " ; "
+                    << std::right << std::setfill(' ') << std::setw(20)
+                    << tempo << " ; "
+                    << std::right << std::setfill(' ') << std::setw(20)
+                    << trocas << " ; "
+                    << std::right << std::setfill(' ') << std::setw(20)
+                    << comparacoes
+                    << std::endl;
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
     }
 
-    //IMPROVED BUBBLE SORT ================================================================
-    for (int i = 0; i < 3; i++) {
-        int tam = melhor_caso[i].size();
-        arquivo << "Improved Bubble Sort ; " << tam << " ; Melhor ; ";
-        tp1 = std::chrono::steady_clock::now();
-        improvedBubbleSort(melhor_caso[i].data(), melhor_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Improved Bubble Sort ; " << tam << " ; Medio ; ";
-        tp1 = std::chrono::steady_clock::now();
-        improvedBubbleSort(melhor_caso[i].data(), medio_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Improved Bubble Sort ; " << tam << " ; Pior ; ";
-        tp1 = std::chrono::steady_clock::now();
-        improvedBubbleSort(melhor_caso[i].data(), pior_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-    }
-
-    //INSERTION SORT ================================================================
-    for (int i = 0; i < 3; i++) {
-        int tam = melhor_caso[i].size();
-        arquivo << "Insertion Sort ; " << tam << " ; Melhor ; ";
-        tp1 = std::chrono::steady_clock::now();
-        insertion_sort(melhor_caso[i].data(), melhor_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Insertion Sort ; " << tam << " ; Medio ; ";
-        tp1 = std::chrono::steady_clock::now();
-        insertion_sort(melhor_caso[i].data(), medio_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Insertion Sort ; " << tam << " ; Pior ; ";
-        tp1 = std::chrono::steady_clock::now();
-        insertion_sort(melhor_caso[i].data(), pior_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-    }
-
-    //SELECTION SORT ================================================================
-    for (int i = 0; i < 3; i++) {
-        int tam = melhor_caso[i].size();
-        arquivo << "Selection Sort ; " << tam << " ; Melhor ; ";
-        tp1 = std::chrono::steady_clock::now();
-        selectionSort(melhor_caso[i].data(), melhor_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Selection Sort ; " << tam << " ; Medio ; ";
-        tp1 = std::chrono::steady_clock::now();
-        selectionSort(melhor_caso[i].data(), medio_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Selection Sort ; " << tam << " ; Pior ; ";
-        tp1 = std::chrono::steady_clock::now();
-        selectionSort(melhor_caso[i].data(), pior_caso[i].size(), &trocas, &comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-    }
-
-
-    //QUICK SORT ================================================================
-    for (int i = 0; i < 3; i++) {
-        int tam = melhor_caso[i].size();
-        arquivo << "Selection Sort ; " << tam << " ; Melhor ; ";
-        tp1 = std::chrono::steady_clock::now();
-        quick_sort(melhor_caso[i], trocas, comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Selection Sort ; " << tam << " ; Medio ; ";
-        tp1 = std::chrono::steady_clock::now();
-        quick_sort(medio_caso[i], trocas, comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-
-        arquivo << "Selection Sort ; " << tam << " ; Pior ; ";
-        tp1 = std::chrono::steady_clock::now();
-        quick_sort(pior_caso[i], trocas, comparacoes);
-        tp2 = std::chrono::steady_clock::now();
-        tempo = std::chrono::duration<double>(tp2 - tp1).count();
-        arquivo << tempo << " ; " << trocas << " ; " << comparacoes << std::endl;
-    }
     arquivo.close();
+    std::cout << "Arquivo \"" << nome_arquivo << "\" salvo.\n";
+
     return 0;
 }
