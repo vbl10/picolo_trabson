@@ -6,6 +6,68 @@
 #include <iostream>
 #include <iomanip>
 
+void merge_sort_merge(int arr[], int left, int middle, int right, long long int* trocas, long long int* comparacoes) {
+    int i, j, k;
+    int n1 = middle - left + 1;
+    int n2 = right - middle;
+
+    int* L = (int*)malloc(n1 * sizeof(int));
+    int* R = (int*)malloc(n2 * sizeof(int));
+
+    for (i = 0; i < n1; i++)
+        L[i] = arr[left + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[middle + 1 + j];
+
+    i = 0;
+    j = 0;
+    k = left;
+    while (i < n1 && j < n2) {
+        (*comparacoes)++;
+        (*trocas)++;
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i++;
+        }
+        else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    while (i < n1) {
+        (*trocas)++;
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    while (j < n2) {
+        (*trocas)++;
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+
+    free(L);
+    free(R);
+}
+void merge_sort_aux(int arr[], int left, int right, long long int* trocas, long long int* comparacoes) {
+    if (left < right) {
+        int middle = left + (right - left) / 2;
+        merge_sort_aux(arr, left, middle, trocas, comparacoes);
+        merge_sort_aux(arr, middle + 1, right, trocas, comparacoes);
+        merge_sort_merge(arr, left, middle, right, trocas, comparacoes);
+    }
+}
+void merge_sort(int arr[], int tam, long long int* trocas, long long int* comparacoes) {
+    (*trocas) = 0;
+    (*comparacoes) = 0;
+    merge_sort_aux(arr, 0, tam - 1, trocas, comparacoes);
+}
+
+
 void radix_sort(int arr[], int tam, long long int* trocas, long long int* comparacoes) {
     *trocas = 0;
     *comparacoes = 0;
@@ -222,7 +284,7 @@ int main(int n_args, char** p_args) {
         int tam = (int)std::pow(10, i + 3);
         vec[i][2].resize(tam);
         for (int j = 0; j < tam; j++) {
-            vec[i][2][j] = tam - i;
+            vec[i][2][j] = tam - j;
         }
     }
 
@@ -233,6 +295,7 @@ int main(int n_args, char** p_args) {
         insertion_sort,
         selectionSort,
         quick_sort,
+        merge_sort,
         radix_sort
     };
     std::vector<const char*> nomes_algoritimos = {
@@ -241,6 +304,7 @@ int main(int n_args, char** p_args) {
         "Insertion Sort",
         "Selection Sort",
         "Quick Sort",
+        "Merge Sort",
         "Radix Sort"
     };
 
@@ -299,6 +363,15 @@ int main(int n_args, char** p_args) {
                 
                 tempo = std::chrono::duration<double>(tp2 - tp1).count();
                 
+                for (int i = 1; i < aux.size(); i++) {
+                    if (aux[i] < aux[i - 1]) {
+                        std::cout << std::endl << "Algoritimo nao ordenou o conjunto" << std::endl;
+                        arquivo.close();
+                        system("pause");
+                        return 0;
+                    }
+                }
+
                 std::cout
                     << std::right << std::setfill(' ') << std::setw(17)
                     << tempo
@@ -331,5 +404,6 @@ int main(int n_args, char** p_args) {
     arquivo.close();
     std::cout << "Arquivo \"" << nome_arquivo << "\" salvo.\n";
 
+    system("pause");
     return 0;
 }
